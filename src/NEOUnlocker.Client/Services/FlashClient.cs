@@ -25,7 +25,7 @@ public class FlashClient : IFlashClient
     private static readonly Dictionary<string, (string Tool, string Args)> DeviceToolMap = new()
     {
         ["MTK6580"] = ("bln.exe", "-flash {system.bin} -loader {usbloader-5577.bin}"),
-        ["Qualcomm8937"] = ("fastboot.exe", "flash system {system.bin} && flash boot {boot.img}")
+        ["Qualcomm8937"] = ("fastboot.exe", "flash system {system.bin}") // Note: boot.img flashing would be separate command
     };
 
     public FlashClient(

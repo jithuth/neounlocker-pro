@@ -46,7 +46,7 @@ public class HWIDService : IHWIDService
             
             _cachedHwid = Convert.ToHexString(hash);
             
-            _logger.LogInformation("Generated HWID: {HWID}", _cachedHwid[..16] + "...");
+            _logger.LogInformation("Generated HWID successfully");
             
             return _cachedHwid;
         }

@@ -166,15 +166,13 @@ public class SessionService : ISessionService
         }
 
         // Update status
-        session.Status = success ? FlashSessionStatus.Completed : FlashSessionStatus.Failed;
+        var finalStatus = success ? FlashSessionStatus.Completed : FlashSessionStatus.Failed;
+        session.Status = finalStatus;
         session.ErrorMessage = errorMessage;
-
-        // Burn the session (mark as burned)
-        session.Status = FlashSessionStatus.Burned;
 
         _logger.LogInformation(
             "Session {SessionId} completed. Success: {Success}, Status: {Status}",
-            sessionId, success, session.Status);
+            sessionId, success, finalStatus);
 
         // In production, this would deduct credits from user account
         if (success)
@@ -183,6 +181,9 @@ public class SessionService : ISessionService
                 "Would deduct {Credits} credits for session {SessionId}",
                 session.CreditCost, sessionId);
         }
+
+        // Burn the session (mark as burned after recording the final status)
+        session.Status = FlashSessionStatus.Burned;
 
         // Zero the session key
         CryptographicOperations.ZeroMemory(session.SessionKey);

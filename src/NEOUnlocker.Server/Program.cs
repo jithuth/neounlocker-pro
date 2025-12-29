@@ -24,6 +24,9 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
+        // SECURITY WARNING: This CORS policy is for DEVELOPMENT ONLY!
+        // For production, restrict to specific origins:
+        // policy.WithOrigins("https://yourdomain.com")
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
