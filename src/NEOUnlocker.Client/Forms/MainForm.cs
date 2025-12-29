@@ -66,20 +66,52 @@ public partial class MainForm : Form
         try
         {
             btnScanPorts.Enabled = false;
-            LogInfo("Scanning for COM ports...");
+            LogInfo("Scanning for Huawei devices...");
 
-            var ports = await _serialPortService.GetAvailablePortsAsync();
+            var huaweiPorts = await _serialPortService.GetHuaweiPortsAsync();
             
             cmbPorts.Items.Clear();
-            if (ports.Length > 0)
+            if (huaweiPorts.Count > 0)
             {
-                cmbPorts.Items.AddRange(ports);
-                cmbPorts.SelectedIndex = 0;
-                LogSuccess($"Found {ports.Length} COM port(s)");
+                // Store all ports for later reference
+                cmbPorts.Tag = huaweiPorts;
+                
+                // Add only 3G PC UI Interface ports (for Step 1)
+                var pcuiPorts = huaweiPorts.Where(p => p.PortType == "3G_PCUI" || p.PortType == "Modem").ToList();
+                
+                if (pcuiPorts.Count > 0)
+                {
+                    foreach (var port in pcuiPorts)
+                    {
+                        cmbPorts.Items.Add(port.DisplayName);
+                    }
+                    cmbPorts.SelectedIndex = 0;
+                    LogSuccess($"Found {pcuiPorts.Count} Huawei 3G PC UI Interface port(s)");
+                    
+                    // Log port details
+                    foreach (var port in pcuiPorts)
+                    {
+                        var status = port.IsAvailable ? "Available" : "In Use";
+                        LogInfo($"  • {port.PortName} - {port.PortType} ({status})");
+                    }
+                }
+                else
+                {
+                    LogWarning("Found Huawei devices, but no 3G PC UI Interface ports available");
+                    LogInfo("Make sure your device is in modem mode, not fastboot mode");
+                }
+                
+                // Check for Download ports for Step 2
+                var downloadPorts = huaweiPorts.Where(p => p.PortType == "Download").ToList();
+                if (downloadPorts.Count > 0)
+                {
+                    LogInfo($"Found {downloadPorts.Count} Huawei Download port(s) for Step 2");
+                }
             }
             else
             {
-                LogWarning("No COM ports found");
+                LogWarning("No Huawei devices detected. Please connect your router.");
+                LogInfo("Make sure Huawei USB drivers are installed.");
             }
         }
         catch (Exception ex)
@@ -112,16 +144,44 @@ public partial class MainForm : Form
             return;
         }
 
-        var portName = cmbPorts.SelectedItem.ToString();
-        if (string.IsNullOrEmpty(portName))
+        var selectedDisplay = cmbPorts.SelectedItem.ToString();
+        if (string.IsNullOrEmpty(selectedDisplay))
             return;
+
+        // Extract port name from display string (e.g., "COM5 - 3G_PCUI" -> "COM5")
+        var portName = selectedDisplay.Split('-')[0].Trim();
+
+        // Check if port is available
+        var huaweiPorts = cmbPorts.Tag as List<HuaweiPortInfo>;
+        var portInfo = huaweiPorts?.FirstOrDefault(p => p.PortName == portName);
+
+        if (portInfo != null && !portInfo.IsAvailable)
+        {
+            LogError($"Port {portName} is currently in use by another application");
+            MessageBox.Show(
+                $"Port {portName} is currently in use by another application.\n\n" +
+                "Possible causes:\n" +
+                "• Huawei Mobile Connect software is running\n" +
+                "• Another unlock tool is open\n" +
+                "• Windows Modem Manager has the port locked\n\n" +
+                "Solutions:\n" +
+                "1. Close Huawei Mobile Connect software\n" +
+                "2. Unplug and replug the device\n" +
+                "3. Restart this application\n" +
+                "4. Try a different USB port",
+                "Port In Use",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
 
         try
         {
             btnConnect.Enabled = false;
             LogInfo($"Connecting to {portName}...");
 
-            var connected = await _serialPortService.ConnectAsync(portName);
+            // Use retry logic for better reliability
+            var connected = await _serialPortService.ConnectWithRetryAsync(portName, maxRetries: 3);
             
             if (connected)
             {
@@ -130,15 +190,41 @@ public partial class MainForm : Form
                 btnConnect.Text = "Disconnect";
                 grpStep1.Enabled = true;
                 LogSuccess($"Connected to {portName}");
+                
+                // Show diagnostics
+                var diagnostics = _serialPortService.GetDiagnostics();
+                LogInfo($"Connection diagnostics:\n{diagnostics}");
             }
             else
             {
                 LogError($"Failed to connect to {portName}");
+                MessageBox.Show(
+                    $"Failed to connect to {portName}.\n\n" +
+                    "The device is not responding to AT commands.\n\n" +
+                    "Please try:\n" +
+                    "1. Unplug and replug the device\n" +
+                    "2. Make sure the device is in modem mode\n" +
+                    "3. Try a different USB port\n" +
+                    "4. Restart the device",
+                    "Connection Failed",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
+        }
+        catch (InvalidOperationException ex)
+        {
+            // User-friendly error already in exception message
+            LogError($"Connection error: {ex.Message}");
+            MessageBox.Show(ex.Message, "Connection Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
         catch (Exception ex)
         {
             LogError($"Connection error: {ex.Message}");
+            MessageBox.Show(
+                $"An unexpected error occurred:\n\n{ex.Message}",
+                "Connection Error",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Error);
         }
         finally
         {
