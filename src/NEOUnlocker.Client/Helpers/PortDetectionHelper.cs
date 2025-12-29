@@ -179,20 +179,36 @@ public static class PortDetectionHelper
 
         try
         {
-            // Try to open the port briefly to check availability
-            using var port = new SerialPort(portName);
+            using var port = new SerialPort(portName)
+            {
+                BaudRate = 9600,
+                ReadTimeout = 100,
+                WriteTimeout = 100
+            };
+            
             port.Open();
+            
+            // Hold port longer to detect transient locks
+            Thread.Sleep(500);
+            
+            // Test DTR/RTS (fails if driver has lock)
+            port.DtrEnable = true;
+            port.RtsEnable = true;
+            
             port.Close();
             return true;
+        }
+        catch (IOException)
+        {
+            return false; // Driver-level lock
         }
         catch (UnauthorizedAccessException)
         {
             // Port is in use by another application
             return false;
         }
-        catch (Exception)
+        catch
         {
-            // Port doesn't exist or other error
             return false;
         }
     }
