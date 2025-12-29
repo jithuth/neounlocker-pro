@@ -207,7 +207,7 @@ public static class PortDetectionHelper
             // Port is in use by another application
             return false;
         }
-        catch
+        catch (Exception)
         {
             return false;
         }
