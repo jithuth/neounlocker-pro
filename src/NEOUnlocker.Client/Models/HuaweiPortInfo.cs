@@ -36,6 +36,17 @@ public class HuaweiPortInfo
     public bool IsAvailable { get; set; }
 
     /// <summary>
+    /// Gets the device mode based on available port types.
+    /// </summary>
+    public DeviceMode DeviceMode => PortType switch
+    {
+        "3G_PCUI" => DeviceMode.ModemMode,
+        "Modem" => DeviceMode.ModemMode,
+        "Download" => DeviceMode.FastbootMode,
+        _ => DeviceMode.Unknown
+    };
+
+    /// <summary>
     /// Gets a user-friendly display name for the port.
     /// </summary>
     public string DisplayName => $"{PortName} - {PortType}" + (IsAvailable ? "" : " (In Use)");
@@ -50,4 +61,30 @@ public class HuaweiPortInfo
         "Download" => 115200,
         _ => 115200
     };
+}
+
+/// <summary>
+/// Represents the current mode of a Huawei device.
+/// </summary>
+public enum DeviceMode
+{
+    /// <summary>
+    /// Device mode is unknown or cannot be determined.
+    /// </summary>
+    Unknown,
+
+    /// <summary>
+    /// Device is in modem mode (3G PC UI Interface available).
+    /// </summary>
+    ModemMode,
+
+    /// <summary>
+    /// Device is in fastboot mode (Download port available).
+    /// </summary>
+    FastbootMode,
+
+    /// <summary>
+    /// Device is in ADB mode (ADB port available).
+    /// </summary>
+    ADBMode
 }
