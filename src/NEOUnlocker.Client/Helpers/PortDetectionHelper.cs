@@ -253,4 +253,3 @@ public static class PortDetectionHelper
                int.TryParse(portName.Substring(3), out _);
     }
 }
-

@@ -73,6 +73,9 @@ public partial class MainForm : Form
             cmbPorts.Items.Clear();
             if (huaweiPorts.Count > 0)
             {
+                // Store all ports for later reference
+                cmbPorts.Tag = huaweiPorts;
+                
                 // Add only 3G PC UI Interface ports (for Step 1)
                 var pcuiPorts = huaweiPorts.Where(p => p.PortType == "3G_PCUI" || p.PortType == "Modem").ToList();
                 
@@ -81,7 +84,6 @@ public partial class MainForm : Form
                     foreach (var port in pcuiPorts)
                     {
                         cmbPorts.Items.Add(port.DisplayName);
-                        cmbPorts.Tag = huaweiPorts; // Store all ports for later reference
                     }
                     cmbPorts.SelectedIndex = 0;
                     LogSuccess($"Found {pcuiPorts.Count} Huawei 3G PC UI Interface port(s)");
