@@ -1,141 +1,297 @@
 # NEOUnlocker Pro
 
-**Production-Ready Secure Firmware Flash System**
+**Production-Ready Router Unlock Desktop Application**
 
-A Windows desktop application (.NET 8, WPF) with ASP.NET Core backend for securely flashing devices using native tools while protecting confidential firmware.
+A Windows desktop application (.NET 8, Windows Forms) for unlocking Huawei routers through a secure three-step process using AT commands and fastboot operations.
 
-## 🔒 Security-First Architecture
+## 🔓 Overview
 
-NEOUnlocker Pro implements defense-in-depth security measures to ensure firmware remains confidential and cannot be reused:
-
-- ✅ **Zero Plaintext Firmware on Client**: Firmware decrypted only in memory during flash
-- ✅ **One-Time Sessions**: Cryptographically secured, HWID-bound, 15-minute expiry
-- ✅ **Memory-Only Decryption**: Sensitive data zeroed immediately after use
-- ✅ **Secure Key Management**: RSA-2048 with Windows DPAPI, AES-256-GCM encryption
-- ✅ **Session Burning**: Automatic deactivation after use/failure
+NEOUnlocker Pro is a professional tool designed to unlock Huawei routers by:
+1. Reading router properties via AT commands (3G PC UI Interface)
+2. Switching device to fastboot mode (Huawei Download Port)
+3. Flashing bootloader and executing unlock commands
 
 ## 📋 Project Status
 
-🚧 **Initial Setup** - Implementation in progress
+🚀 **Core Implementation Complete** - Windows Forms application with full three-step unlock workflow
 
 ## 🏗️ Architecture Overview
 
 ```
 ┌─────────────────────────────────────────┐
-│     Windows Desktop Client (.NET 8)      │
+│   Windows Desktop Application (.NET 8)  │
+│                                          │
 │  ┌────────────────────────────────────┐ │
-│  │ • RSA Key Management (DPAPI)      │ │
-│  │ • HWID Generation & Binding       │ │
-│  │ • Memory-Only Firmware Decrypt    │ │
-│  │ • Secure Native Tool Execution    │ │
+│  │     Three-Step Unlock Process     │ │
+│  │                                    │ │
+│  │  Step 1: Read Router Properties   │ │
+│  │  • Serial Port (AT Commands)      │ │
+│  │  • IMEI, Model, Firmware, Status  │ │
+│  │                                    │ │
+│  │  Step 2: Switch to Fastboot       │ │
+│  │  • Disconnect serial port         │ │
+│  │  • Detect fastboot device         │ │
+│  │  • Verify connection              │ │
+│  │                                    │ │
+│  │  Step 3: Unlock Device            │ │
+│  │  • Flash bootloader               │ │
+│  │  • Execute unlock command         │ │
+│  │  • Reboot device                  │ │
 │  └────────────────────────────────────┘ │
 └─────────────────────────────────────────┘
-              ▲ │ HTTPS
-              │ ▼
+            ↕ Serial Port (AT)
+            ↕ Fastboot Protocol
 ┌─────────────────────────────────────────┐
-│   ASP.NET Core Backend (.NET 8)         │
-│  ┌────────────────────────────────────┐ │
-│  │ • One-Time Session Management     │ │
-│  │ • Encrypted Firmware Storage      │ │
-│  │ • Session Key Wrapping (RSA)      │ │
-│  │ • Streaming Re-encryption         │ │
-│  └────────────────────────────────────┘ │
+│         Huawei Router Device             │
+│  • 3G PC UI Interface (AT Commands)     │
+│  • Huawei Download Port (Fastboot)      │
 └─────────────────────────────────────────┘
 ```
 
 ## 🛠️ Technology Stack
 
-- **Backend**: ASP.NET Core 8.0
-- **Client**: .NET 8 WPF
-- **Encryption**: AES-256-GCM, RSA-2048-OAEP-SHA256
-- **Key Storage**: Windows DPAPI (client), Azure Key Vault (server)
-- **Native Tools**: bln.exe, fastboot.exe
+- **Framework**: .NET 8 Windows Forms
+- **Serial Communication**: System.IO.Ports
+- **Device Detection**: System.Management (WMI)
+- **Fastboot**: Native fastboot.exe integration
+- **Architecture**: Service-based with dependency injection
+- **Async/Await**: Non-blocking UI operations
+
+## ✨ Features
+
+### Step 1: Read Router Properties
+- ✅ COM port scanning and auto-detection
+- ✅ Huawei device identification via WMI
+- ✅ AT command communication
+- ✅ Retrieve: Manufacturer, Model, IMEI, Firmware, Lock Status
+- ✅ Store properties in memory for Step 3
+
+### Step 2: Switch to Fastboot Mode
+- ✅ Safe serial port disconnection
+- ✅ Clear user instructions for mode switching
+- ✅ Automatic fastboot device detection
+- ✅ Device serial number verification
+- ✅ Timeout handling with countdown
+- ✅ Manual retry option
+
+### Step 3: Unlock Device
+- ✅ Model-based bootloader selection
+- ✅ Progress tracking with percentage
+- ✅ Fastboot flashing operations
+- ✅ OEM unlock command execution
+- ✅ Automatic device reboot
+- ✅ Error handling and retry logic
+
+### User Interface
+- ✅ Modern Windows Forms design
+- ✅ Step-by-step wizard flow
+- ✅ Real-time progress tracking
+- ✅ Color-coded log panel
+- ✅ Status bar with elapsed time
+- ✅ Responsive async operations
+- ✅ Professional error handling
 
 ## 📁 Project Structure
 
 ```
 neounlocker-pro/
 ├── src/
-│   ├── NEOUnlocker.Server/       # ASP.NET Core REST API
-│   └── NEOUnlocker.Client/       # Windows WPF Desktop App
-├── docs/                          # Documentation
-├── tools/                         # Native flash tools
-└── tests/                         # Unit & integration tests
+│   ├── NEOUnlocker.Client/         # Windows Forms Application
+│   │   ├── Forms/
+│   │   │   ├── MainForm.cs         # Main UI form
+│   │   │   └── MainForm.Designer.cs
+│   │   ├── Services/
+│   │   │   ├── SerialPortService.cs      # AT command communication
+│   │   │   ├── FastbootService.cs        # Fastboot operations
+│   │   │   └── RouterService.cs          # Three-step orchestration
+│   │   ├── Models/
+│   │   │   ├── RouterInfo.cs             # Router properties
+│   │   │   ├── UnlockProgress.cs         # Progress tracking
+│   │   │   └── UnlockResult.cs           # Result model
+│   │   ├── Helpers/
+│   │   │   ├── ATCommandHelper.cs        # AT command utilities
+│   │   │   └── PortDetectionHelper.cs    # COM port detection
+│   │   ├── Resources/
+│   │   │   └── Bootloaders/              # Bootloader files (not included)
+│   │   ├── Tools/
+│   │   │   └── fastboot.exe              # Fastboot tool (not included)
+│   │   └── appsettings.json
+│   └── NEOUnlocker.Server/         # ASP.NET Core Backend (separate project)
+└── docs/                            # Documentation
 ```
-
-## 🔐 Security Guarantees
-
-### What We Protect Against
-- ❌ Firmware extraction and reuse
-- ❌ Man-in-the-middle attacks
-- ❌ Session replay attacks
-- ❌ Unauthorized device flashing
-- ❌ Firmware reverse engineering
-
-### How We Protect
-- ✅ End-to-end encryption with ephemeral session keys
-- ✅ Hardware-bound sessions (HWID validation)
-- ✅ Cryptographic memory zeroing
-- ✅ Tool integrity validation (SHA256)
-- ✅ 3-pass secure file deletion
-- ✅ Time-limited sessions with automatic expiry
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 8 SDK
-- Windows 10/11 (for client)
-- Visual Studio 2022 or JetBrains Rider
+- **Windows 10/11** (64-bit)
+- **.NET 8 SDK** or Runtime
+- **Fastboot.exe** (Android SDK Platform Tools)
+- **Bootloader files** for your router model
+- **USB Drivers** for Huawei devices
 
-### Server Setup
-```bash
-cd src/NEOUnlocker.Server
-dotnet restore
-dotnet run
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jithuth/neounlocker-pro.git
+   cd neounlocker-pro
+   ```
+
+2. **Install fastboot.exe**
+   - Download [Android SDK Platform Tools](https://developer.android.com/studio/releases/platform-tools)
+   - Extract `fastboot.exe` to `src/NEOUnlocker.Client/Tools/`
+
+3. **Add bootloader files**
+   - Place bootloader files in `src/NEOUnlocker.Client/Resources/Bootloaders/`
+   - Update `appsettings.json` with model mappings
+
+4. **Build and run**
+   ```bash
+   cd src/NEOUnlocker.Client
+   dotnet restore
+   dotnet run
+   ```
+
+   Or open `NEOUnlocker.sln` in Visual Studio 2022 and press F5.
+
+## 🔧 Configuration
+
+Edit `src/NEOUnlocker.Client/appsettings.json`:
+
+```json
+{
+  "SerialPort": {
+    "BaudRate": 115200,
+    "DataBits": 8,
+    "Parity": "None",
+    "StopBits": "One",
+    "ReadTimeout": 5000,
+    "WriteTimeout": 5000
+  },
+  "Fastboot": {
+    "ExecutablePath": "./Tools/fastboot.exe",
+    "DetectionTimeoutSeconds": 60,
+    "FlashTimeoutSeconds": 300
+  },
+  "Bootloaders": {
+    "Directory": "./Resources/Bootloaders",
+    "ModelMapping": {
+      "E5573": "E5573.bin",
+      "E8372": "E8372.bin"
+    }
+  }
+}
 ```
 
-### Client Setup
-```bash
-cd src/NEOUnlocker.Client
-dotnet restore
-dotnet run
-```
+## 📖 Usage
 
-## 📖 Documentation
+### Step-by-Step Guide
 
-- [Architecture Guide](docs/architecture.md) *(coming soon)*
-- [Security Model](docs/security.md) *(coming soon)*
-- [API Documentation](docs/api.md) *(coming soon)*
-- [Deployment Guide](docs/deployment.md) *(coming soon)*
+1. **Launch Application**
+   - Start NEOUnlocker Pro
+   - Application will auto-scan for COM ports
 
-## 🤝 Contributing
+2. **Step 1: Read Router Properties**
+   - Connect router via USB (3G PC UI Interface mode)
+   - Select COM port from dropdown
+   - Click "Connect"
+   - Click "Read Properties"
+   - Verify: Model, IMEI, Firmware are displayed
 
-This is a security-critical project. All contributions must:
-1. Pass security review
-2. Include comprehensive tests
-3. Follow coding standards
-4. Maintain zero-trust principles
+3. **Step 2: Switch to Fastboot Mode**
+   - Follow on-screen instructions
+   - Switch device to Fastboot mode (Huawei Download Port)
+   - Click "Detect Fastboot Device"
+   - Wait for device detection (up to 60 seconds)
+   - Device serial will be displayed when detected
+
+4. **Step 3: Unlock Device**
+   - Verify correct bootloader file is mapped for your model
+   - Click "Start Unlock"
+   - Monitor progress in the log panel
+   - Wait for completion message
+   - Device will reboot automatically
+
+### AT Commands Used
+
+The application uses standard AT commands:
+- `AT+CGMI` - Get manufacturer
+- `AT+CGMM` - Get model
+- `AT+CGSN` - Get IMEI/serial number
+- `AT+CGMR` - Get firmware version
+- `AT^CARDLOCK?` - Get lock status
+- `ATI` - Get device information
+
+### Fastboot Commands
+
+The application executes:
+- `fastboot devices` - Detect connected device
+- `fastboot flash bootloader <file>` - Flash bootloader
+- `fastboot oem unlock` - Unlock device
+- `fastboot reboot` - Reboot device
+
+## ⚠️ Important Notes
+
+### Security & Legal
+- **Bootloader files are NOT included** in this repository for security and licensing reasons
+- Only unlock devices you own or have authorization to unlock
+- Unlocking may void warranty and violate terms of service
+- Use at your own risk
+
+### Requirements
+- **Drivers**: Install Huawei USB drivers before use
+- **Bootloaders**: Must be obtained separately for each model
+- **Administrator**: May require admin privileges for some operations
+- **Backup**: Backup device data before unlocking
+
+### Supported Devices
+- Huawei E5573
+- Huawei E8372
+- Huawei E5577
+- Huawei E3372
+- Other Huawei routers (with appropriate bootloader files)
+
+## 🐛 Troubleshooting
+
+### COM Port Issues
+- Ensure USB drivers are installed
+- Try different USB ports
+- Check Device Manager for port number
+- Restart device and try again
+
+### Fastboot Not Detected
+- Verify fastboot.exe is in Tools directory
+- Check device is in fastboot mode (not normal mode)
+- Try `fastboot devices` in command prompt
+- Install Huawei fastboot drivers
+
+### Bootloader Flash Fails
+- Verify bootloader file matches device model exactly
+- Check file is not corrupted
+- Ensure sufficient battery (>50%)
+- Try different USB cable/port
 
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) file for details
 
-## ⚠️ Security Disclosure
+## ⚠️ Disclaimer
 
-Found a security vulnerability? Please email: security@neounlocker.com
-
-**Do NOT create public issues for security vulnerabilities.**
+This software is provided "as is" without warranty of any kind. The authors are not responsible for any damage or data loss that may occur from using this software. Always backup your data and understand the risks before proceeding.
 
 ## 🎯 Roadmap
 
-- [x] Architecture design
-- [ ] Server implementation
-- [ ] Client implementation
-- [ ] Security hardening
-- [ ] Comprehensive testing
-- [ ] Production deployment
-- [ ] Documentation completion
+- [x] Core three-step unlock process
+- [x] Windows Forms UI
+- [x] Serial port communication (AT commands)
+- [x] Fastboot integration
+- [x] Progress tracking and logging
+- [ ] Multi-language support
+- [ ] Device compatibility checker
+- [ ] Automatic bootloader download
+- [ ] Advanced diagnostics mode
+- [ ] Batch unlock support
 
 ---
 
-**Built with security, performance, and reliability in mind.** 🛡️
+**Built for educational and research purposes.** 🔓

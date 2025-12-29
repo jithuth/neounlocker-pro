@@ -88,6 +88,14 @@ tools/fastboot.exe
 tools/*.exe
 tools/*.dll
 
+# Client tools and bootloaders (NOT included in repository)
+**/Tools/*.exe
+**/Tools/*.dll
+!**/Tools/README.md
+
+**/Resources/Bootloaders/*.bin
+!**/Resources/Bootloaders/README.md
+
 # Temporary files
 *.tmp
 *.temp
