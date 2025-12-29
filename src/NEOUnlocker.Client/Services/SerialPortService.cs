@@ -98,7 +98,27 @@ public class SerialPortService : ISerialPortService, IDisposable
                 WriteBufferSize = 2048
             };
 
-            _serialPort.Open();
+            try
+            {
+                _serialPort.Open();
+            }
+            catch (IOException ex)
+            {
+                _logger.LogError(ex, "Port locked by driver");
+                _serialPort?.Dispose();
+                _serialPort = null;
+                ConnectedPort = null;
+                
+                throw new InvalidOperationException(
+                    $"❌ Port {portName} is locked by Windows driver.\n\n" +
+                    "✅ Solution:\n" +
+                    "1. Open Device Manager (Win+X → Device Manager)\n" +
+                    "2. Find 'Ports (COM & LPT)' → {portName}\n" +
+                    "3. Right-click → Disable device → Wait 5 sec → Enable device\n" +
+                    "4. Try connecting again\n\n" +
+                    "OR: Unplug USB → Wait 10 sec → Plug back in", ex);
+            }
+            
             _currentBaudRate = baudRate;
             ConnectedPort = portName;
 
@@ -107,14 +127,14 @@ public class SerialPortService : ISerialPortService, IDisposable
             _serialPort.DiscardOutBuffer();
 
             // Wait for device to be ready
-            await Task.Delay(500);
+            await Task.Delay(1000); // Increased from 500ms
 
             // Test connection with AT command
             var response = await SendCommandAsync(ATCommandHelper.CMD_TEST, 3000);
 
             if (ATCommandHelper.IsSuccessResponse(response))
             {
-                _logger.LogInformation("Successfully connected to {Port} at {BaudRate} baud", portName, baudRate);
+                _logger.LogInformation("✅ Connected to {Port} at {BaudRate} baud", portName, baudRate);
                 return true;
             }
 
