@@ -133,7 +133,7 @@ public class SerialPortService : ISerialPortService, IDisposable
             _serialPort.WriteLine(command);
 
             // Read response with timeout
-            var response = new StringBuilder();
+            var response = new StringBuilder(1024); // Pre-sized for typical AT response
             var startTime = DateTime.UtcNow;
             var timeoutSpan = TimeSpan.FromMilliseconds(timeoutMs);
 
@@ -158,7 +158,7 @@ public class SerialPortService : ISerialPortService, IDisposable
             }
 
             var result = response.ToString().Trim();
-            _logger.LogDebug("Received response: {Response}", result.Length > 100 ? result.Substring(0, 100) + "..." : result);
+            _logger.LogDebug("Received response: {Response}", result.Length > 100 ? result[..100] + "..." : result);
 
             return result;
         }

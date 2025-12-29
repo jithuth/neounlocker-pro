@@ -14,6 +14,8 @@ public class FastbootService : IFastbootService
 {
     private readonly ILogger<FastbootService> _logger;
     private readonly string _fastbootPath;
+    private static readonly Regex DeviceSerialRegex = new(@"^([A-Z0-9]+)\s+fastboot", RegexOptions.Multiline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private const string FastbootSendingKeyword = "sending";
 
     public FastbootService(ILogger<FastbootService> logger, IConfiguration configuration)
     {
@@ -64,7 +66,7 @@ public class FastbootService : IFastbootService
             if (result.Success && !string.IsNullOrWhiteSpace(result.Output))
             {
                 // Parse output: "serial_number    fastboot"
-                var match = Regex.Match(result.Output, @"^([A-Z0-9]+)\s+fastboot", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+                var match = DeviceSerialRegex.Match(result.Output);
                 if (match.Success)
                 {
                     var serial = match.Groups[1].Value;
@@ -208,7 +210,7 @@ public class FastbootService : IFastbootService
                 _logger.LogDebug("Fastboot output: {Output}", e.Data);
 
                 // Parse progress if flashing
-                if (progress != null && e.Data.Contains("sending", StringComparison.OrdinalIgnoreCase))
+                if (progress != null && e.Data.Contains(FastbootSendingKeyword, StringComparison.OrdinalIgnoreCase))
                 {
                     progress.Report(new UnlockProgress
                     {

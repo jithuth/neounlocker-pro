@@ -60,10 +60,17 @@ public static class PortDetectionHelper
     /// </summary>
     public static string GetPortDescription(string portName)
     {
+        // Validate and sanitize port name to prevent WMI injection
+        if (string.IsNullOrWhiteSpace(portName) || !IsValidPortName(portName))
+            return portName;
+
         try
         {
+            // Escape the port name for WMI query to prevent injection
+            var escapedPortName = portName.Replace("\\", "\\\\").Replace("'", "\\'");
+            
             using var searcher = new ManagementObjectSearcher(
-                $"SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%{portName}%'");
+                $"SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%{escapedPortName}%'");
 
             foreach (ManagementObject obj in searcher.Get())
             {

@@ -362,8 +362,7 @@ public partial class MainForm : Form
                 break;
             case 2:
                 lblStep2Status.Text = progress.Stage;
-                lblCountdown.Text = progress.Message.Contains("remaining") ? 
-                    progress.Message.Split('(').LastOrDefault()?.TrimEnd(')') ?? "" : "";
+                lblCountdown.Text = ExtractCountdownFromMessage(progress.Message);
                 break;
             case 3:
                 progressBar.Value = Math.Min(progress.Percentage, 100);
@@ -431,6 +430,21 @@ public partial class MainForm : Form
         txtLogs.ScrollToCaret();
 
         _logger.LogInformation(message);
+    }
+
+    private static string ExtractCountdownFromMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message) || !message.Contains("remaining", StringComparison.OrdinalIgnoreCase))
+            return string.Empty;
+
+        // Extract countdown text from message like "Waiting... (30s remaining)"
+        var parts = message.Split('(');
+        if (parts.Length > 1)
+        {
+            return parts[^1].TrimEnd(')');
+        }
+
+        return string.Empty;
     }
 
     #endregion

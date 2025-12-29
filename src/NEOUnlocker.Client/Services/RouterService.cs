@@ -335,17 +335,37 @@ public class RouterService : IRouterService
             bootloadersDir = Path.Combine(AppContext.BaseDirectory, bootloadersDir);
         }
 
+        // Normalize and validate the base directory to prevent path traversal
+        bootloadersDir = Path.GetFullPath(bootloadersDir);
+
         // Try to get from mapping
         var mapping = _configuration.GetSection("Bootloaders:ModelMapping");
         var bootloaderFile = mapping[model];
 
         if (!string.IsNullOrEmpty(bootloaderFile))
         {
-            return Path.Combine(bootloadersDir, bootloaderFile);
+            var fullPath = Path.GetFullPath(Path.Combine(bootloadersDir, bootloaderFile));
+            
+            // Validate that the resolved path is within the bootloaders directory
+            if (!fullPath.StartsWith(bootloadersDir, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogError("Path traversal attempt detected for model: {Model}, file: {File}", model, bootloaderFile);
+                return null;
+            }
+            
+            return fullPath;
         }
 
         // Try direct match with .bin extension
-        var directPath = Path.Combine(bootloadersDir, $"{model}.bin");
+        var directPath = Path.GetFullPath(Path.Combine(bootloadersDir, $"{model}.bin"));
+        
+        // Validate that the resolved path is within the bootloaders directory
+        if (!directPath.StartsWith(bootloadersDir, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogError("Path traversal attempt detected for model: {Model}", model);
+            return null;
+        }
+        
         if (File.Exists(directPath))
         {
             return directPath;
