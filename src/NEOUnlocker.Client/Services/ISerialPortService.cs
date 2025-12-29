@@ -13,9 +13,19 @@ public interface ISerialPortService
     Task<string[]> GetAvailablePortsAsync();
 
     /// <summary>
+    /// Gets detailed information about Huawei ports only.
+    /// </summary>
+    Task<List<HuaweiPortInfo>> GetHuaweiPortsAsync();
+
+    /// <summary>
     /// Connects to the specified COM port.
     /// </summary>
     Task<bool> ConnectAsync(string portName, int baudRate = 115200);
+
+    /// <summary>
+    /// Connects to the specified COM port with retry logic and multiple baud rates.
+    /// </summary>
+    Task<bool> ConnectWithRetryAsync(string portName, int maxRetries = 3);
 
     /// <summary>
     /// Disconnects from the current port.
@@ -41,4 +51,14 @@ public interface ISerialPortService
     /// Gets the name of the currently connected port.
     /// </summary>
     string? ConnectedPort { get; }
+
+    /// <summary>
+    /// Gets the current baud rate.
+    /// </summary>
+    int CurrentBaudRate { get; }
+
+    /// <summary>
+    /// Gets connection diagnostics information.
+    /// </summary>
+    string GetDiagnostics();
 }
